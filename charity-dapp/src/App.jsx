@@ -19,16 +19,16 @@ function App() {
   const [userRole, setUserRole] = useState("Donor / Public");
 
   async function updateUI() {
+    // Safety check: Don't run if MetaMask is missing
     if (typeof window.ethereum !== "undefined") {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      const currentAccount = accounts[0].toLowerCase();
       
-      setAccount(currentAccount);
-
       try {
-        // 1. Fetch Contract State
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        const currentAccount = accounts[0].toLowerCase();
+        setAccount(currentAccount);
+
         const [bal, charityAddr, verifierAddr] = await Promise.all([
           contract.getContractBalance(),
           contract.charity(),
@@ -37,7 +37,6 @@ function App() {
 
         setBalance(ethers.formatEther(bal));
 
-        // 2. Identify Role
         if (currentAccount === charityAddr.toLowerCase()) {
           setUserRole("Charity (Authorized to Request/Withdraw)");
         } else if (currentAccount === verifierAddr.toLowerCase()) {
@@ -52,6 +51,8 @@ function App() {
   }
 
   async function handleAction(type) {
+    if (!window.ethereum) return alert("Please install MetaMask first!");
+
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
@@ -72,14 +73,18 @@ function App() {
       alert("Success!");
       updateUI();
     } catch (err) {
-      alert("Action Failed! Ensure you are logged into the correct account for this role.");
+      alert("Transaction failed. Are you the right user for this action?");
     }
   }
 
   useEffect(() => {
-    updateUI();
-    // Watch for account changes in MetaMask
-    window.ethereum.on('accountsChanged', updateUI);
+    // FIX: Only add listeners if window.ethereum exists
+    if (typeof window.ethereum !== "undefined") {
+      updateUI();
+      window.ethereum.on('accountsChanged', updateUI);
+    } else {
+      setUserRole("MetaMask Not Detected");
+    }
   }, []);
 
   return (
@@ -87,12 +92,12 @@ function App() {
       <h1>TrustChain Dashboard</h1>
       
       <div style={cardStyle}>
-        <p><strong>Connected Wallet:</strong> {account}</p>
+        <p><strong>Connected Wallet:</strong> {account || "Not Connected"}</p>
         <p><strong>Your Role:</strong> <span style={{ color: "#646cff" }}>{userRole}</span></p>
         <p><strong>Contract Vault:</strong> {balance} ETH</p>
       </div>
 
-      <div style={{ display: "flex", gap: "15px", justifyContent: "center" }}>
+      <div style={{ display: "flex", gap: "15px", justifyContent: "center", flexWrap: "wrap" }}>
         <button onClick={() => handleAction('deposit')} style={btnStyle}>Donate 0.01 ETH</button>
         <button onClick={() => handleAction('request')} style={btnStyle}>Request (Charity)</button>
         <button onClick={() => handleAction('approve')} style={btnStyle}>Approve (Verifier)</button>
@@ -102,23 +107,8 @@ function App() {
   );
 }
 
-const cardStyle = {
-  margin: "20px auto",
-  maxWidth: "500px",
-  padding: "20px",
-  backgroundColor: "white",
-  borderRadius: "12px",
-  boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
-};
-
-const btnStyle = {
-  padding: "12px 24px",
-  cursor: "pointer",
-  backgroundColor: "#646cff",
-  color: "white",
-  border: "none",
-  borderRadius: "8px",
-  fontWeight: "bold"
-};
+// Styles remain the same
+const cardStyle = { margin: "20px auto", maxWidth: "500px", padding: "20px", backgroundColor: "white", borderRadius: "12px", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" };
+const btnStyle = { padding: "12px 24px", cursor: "pointer", backgroundColor: "#646cff", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold" };
 
 export default App;
