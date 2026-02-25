@@ -1,64 +1,124 @@
-import { useState } from 'react';
-import { ethers } from 'ethers';
+import { useState, useEffect } from "react";
+import { ethers } from "ethers";
 
-// 1. IMPORTANT: We will replace this with your Remix address in a moment
-const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000"; 
+const CONTRACT_ADDRESS = "0xd9145CCE52D386f254917e481eB44e9943F39138";
 
-const ABI = [
-  "function donate() public payable",
-  "function releaseToNGO() public",
-  "function vaultBalance() public view returns (uint256)"
+const CONTRACT_ABI = [
+  "function deposit() public payable",
+  "function requestFunds(uint256 _amount) public",
+  "function approveAmount(uint256 _amount) public",
+  "function withdraw() public",
+  "function getContractBalance() public view returns (uint256)",
+  "function charity() public view returns (address)",
+  "function verifier() public view returns (address)"
 ];
 
 function App() {
   const [balance, setBalance] = useState("0");
-  const [wallet, setWallet] = useState("");
+  const [account, setAccount] = useState("");
+  const [userRole, setUserRole] = useState("Donor / Public");
 
-  async function connect() {
-    if (window.ethereum) {
+  async function updateUI() {
+    if (typeof window.ethereum !== "undefined") {
       const provider = new ethers.BrowserProvider(window.ethereum);
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      setWallet(accounts[0]);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const currentAccount = accounts[0].toLowerCase();
       
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+      setAccount(currentAccount);
+
       try {
-        const bal = await contract.vaultBalance();
+        // 1. Fetch Contract State
+        const [bal, charityAddr, verifierAddr] = await Promise.all([
+          contract.getContractBalance(),
+          contract.charity(),
+          contract.verifier()
+        ]);
+
         setBalance(ethers.formatEther(bal));
-      } catch (err) { console.log("Contract not found yet"); }
+
+        // 2. Identify Role
+        if (currentAccount === charityAddr.toLowerCase()) {
+          setUserRole("Charity (Authorized to Request/Withdraw)");
+        } else if (currentAccount === verifierAddr.toLowerCase()) {
+          setUserRole("Verifier (Authorized to Approve)");
+        } else {
+          setUserRole("Donor / Public");
+        }
+      } catch (err) {
+        console.error("Error updating UI:", err);
+      }
     }
   }
 
-  return (
-    <div style={{ background: '#0f172a', color: 'white', minHeight: '100vh', padding: '40px', fontFamily: 'sans-serif', textAlign: 'center' }}>
-      <h1 style={{ color: '#38bdf8' }}>🌍 Trustless Charity Vault</h1>
-      <p>Ensuring funds reach the NGO only after Arbiter approval.</p>
+  async function handleAction(type) {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+    
+    try {
+      let tx;
+      if (type === 'deposit') {
+        tx = await contract.deposit({ value: ethers.parseEther("0.01") });
+      } else if (type === 'request') {
+        tx = await contract.requestFunds(ethers.parseEther("0.01"));
+      } else if (type === 'approve') {
+        tx = await contract.approveAmount(ethers.parseEther("0.01"));
+      } else if (type === 'withdraw') {
+        tx = await contract.withdraw();
+      }
       
-      <button onClick={connect} style={btnStyle}>
-        {wallet ? `Connected: ${wallet.slice(0,6)}...` : "Connect MetaMask"}
-      </button>
+      await tx.wait();
+      alert("Success!");
+      updateUI();
+    } catch (err) {
+      alert("Action Failed! Ensure you are logged into the correct account for this role.");
+    }
+  }
 
+  useEffect(() => {
+    updateUI();
+    // Watch for account changes in MetaMask
+    window.ethereum.on('accountsChanged', updateUI);
+  }, []);
+
+  return (
+    <div style={{ padding: "40px", textAlign: "center", backgroundColor: "#f4f7f6", minHeight: "100vh" }}>
+      <h1>TrustChain Dashboard</h1>
+      
       <div style={cardStyle}>
-        <h2 style={{ fontSize: '2.5rem', margin: '10px 0' }}>{balance} ETH</h2>
-        <p style={{ color: '#94a3b8' }}>Funds currently held in Smart Contract</p>
+        <p><strong>Connected Wallet:</strong> {account}</p>
+        <p><strong>Your Role:</strong> <span style={{ color: "#646cff" }}>{userRole}</span></p>
+        <p><strong>Contract Vault:</strong> {balance} ETH</p>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '30px' }}>
-        <div style={roleBox}>
-          <h3>Donor</h3>
-          <button style={{...actionBtn, background: '#22c55e'}}>Send 0.01 ETH</button>
-        </div>
-        <div style={roleBox}>
-          <h3>Arbiter</h3>
-          <button style={{...actionBtn, background: '#3b82f6'}}>Approve & Release</button>
-        </div>
+      <div style={{ display: "flex", gap: "15px", justifyContent: "center" }}>
+        <button onClick={() => handleAction('deposit')} style={btnStyle}>Donate 0.01 ETH</button>
+        <button onClick={() => handleAction('request')} style={btnStyle}>Request (Charity)</button>
+        <button onClick={() => handleAction('approve')} style={btnStyle}>Approve (Verifier)</button>
+        <button onClick={() => handleAction('withdraw')} style={btnStyle}>Withdraw (Charity)</button>
       </div>
     </div>
   );
 }
 
-const btnStyle = { padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', border: 'none', background: '#334155', color: 'white', fontWeight: 'bold' };
-const cardStyle = { background: '#1e293b', padding: '30px', borderRadius: '15px', marginTop: '20px', border: '1px solid #334155', display: 'inline-block', minWidth: '300px' };
-const roleBox = { background: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px solid #334155', width: '200px' };
-const actionBtn = { width: '100%', padding: '12px', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' };
+const cardStyle = {
+  margin: "20px auto",
+  maxWidth: "500px",
+  padding: "20px",
+  backgroundColor: "white",
+  borderRadius: "12px",
+  boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
+};
+
+const btnStyle = {
+  padding: "12px 24px",
+  cursor: "pointer",
+  backgroundColor: "#646cff",
+  color: "white",
+  border: "none",
+  borderRadius: "8px",
+  fontWeight: "bold"
+};
 
 export default App;
