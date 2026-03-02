@@ -19,7 +19,6 @@ function App() {
   const [userRole, setUserRole] = useState("Donor / Public");
 
   async function updateUI() {
-    // Safety check: Don't run if MetaMask is missing
     if (typeof window.ethereum !== "undefined") {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
@@ -38,11 +37,11 @@ function App() {
         setBalance(ethers.formatEther(bal));
 
         if (currentAccount === charityAddr.toLowerCase()) {
-          setUserRole("Charity (Authorized to Request/Withdraw)");
+          setUserRole("Charity");
         } else if (currentAccount === verifierAddr.toLowerCase()) {
-          setUserRole("Verifier (Authorized to Approve)");
+          setUserRole("Verifier");
         } else {
-          setUserRole("Donor / Public");
+          setUserRole("Donor");
         }
       } catch (err) {
         console.error("Error updating UI:", err);
@@ -52,7 +51,6 @@ function App() {
 
   async function handleAction(type) {
     if (!window.ethereum) return alert("Please install MetaMask first!");
-
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
@@ -73,12 +71,11 @@ function App() {
       alert("Success!");
       updateUI();
     } catch (err) {
-      alert("Transaction failed. Are you the right user for this action?");
+      alert("Transaction failed. Are you authorized for this role?");
     }
   }
 
   useEffect(() => {
-    // FIX: Only add listeners if window.ethereum exists
     if (typeof window.ethereum !== "undefined") {
       updateUI();
       window.ethereum.on('accountsChanged', updateUI);
@@ -88,27 +85,53 @@ function App() {
   }, []);
 
   return (
-    <div style={{ padding: "40px", textAlign: "center", backgroundColor: "#f4f7f6", minHeight: "100vh" }}>
-      <h1>TrustChain Dashboard</h1>
-      
-      <div style={cardStyle}>
-        <p><strong>Connected Wallet:</strong> {account || "Not Connected"}</p>
-        <p><strong>Your Role:</strong> <span style={{ color: "#646cff" }}>{userRole}</span></p>
-        <p><strong>Contract Vault:</strong> {balance} ETH</p>
-      </div>
+    <div className="main-wrapper">
+      {/* Navbar section mimicking professional charity sites */}
+      <nav className="navbar">
+        <div className="logo"><h2>GRANT FOUNDATION</h2></div>
+        <div className="nav-links">
+          <span>Home</span>
+          <span>About</span>
+          <span>Projects</span>
+          <span className="role-badge">Role: {userRole}</span>
+        </div>
+      </nav>
 
-      <div style={{ display: "flex", gap: "15px", justifyContent: "center", flexWrap: "wrap" }}>
-        <button onClick={() => handleAction('deposit')} style={btnStyle}>Donate 0.01 ETH</button>
-        <button onClick={() => handleAction('request')} style={btnStyle}>Request (Charity)</button>
-        <button onClick={() => handleAction('approve')} style={btnStyle}>Approve (Verifier)</button>
-        <button onClick={() => handleAction('withdraw')} style={btnStyle}>Withdraw (Charity)</button>
-      </div>
+      {/* Hero section for professional look */}
+      <header className="hero">
+        <h1>WE CAN HELP SOMEONE</h1>
+        <p style={{maxWidth: '600px'}}>Empowering communities through blockchain transparency.</p>
+        <div style={{marginTop: '30px'}}>
+          <button onClick={() => handleAction('deposit')} className="main-donate-btn">
+            DONATE NOW
+          </button>
+        </div>
+      </header>
+
+      {/* TrustChain Dashboard */}
+      <section className="stats-section">
+        <div className="action-card">
+          <h2 style={{color: '#333'}}>TrustChain Dashboard</h2>
+          <div className="dashboard-grid">
+            <div>
+              <p className="label">CONTRACT VAULT</p>
+              <h3 className="value">{balance} ETH</h3>
+            </div>
+            <div>
+              <p className="label">CONNECTED WALLET</p>
+              <p className="address-text">{account || "Disconnected"}</p>
+            </div>
+          </div>
+          
+          <div className="admin-actions">
+            <button onClick={() => handleAction('request')} className="admin-btn">Request (Charity)</button>
+            <button onClick={() => handleAction('approve')} className="admin-btn">Approve (Verifier)</button>
+            <button onClick={() => handleAction('withdraw')} className="admin-btn">Withdraw (Charity)</button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
-
-// Styles remain the same
-const cardStyle = { margin: "20px auto", maxWidth: "500px", padding: "20px", backgroundColor: "white", borderRadius: "12px", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" };
-const btnStyle = { padding: "12px 24px", cursor: "pointer", backgroundColor: "#646cff", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold" };
 
 export default App;
