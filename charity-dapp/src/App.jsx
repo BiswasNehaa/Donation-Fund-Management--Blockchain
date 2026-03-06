@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
+import "./App.css"; // THIS LINE IS REQUIRED FOR THE DESIGN TO WORK
 
-const CONTRACT_ADDRESS = "0xd9145CCE52D386f254917e481eB44e9943F39138";
+// UPDATED WITH YOUR NEW REMIX ADDRESS
+const CONTRACT_ADDRESS = "0x672F4716B66c24140967a655De766f65C07e4837";
 
 const CONTRACT_ABI = [
   "function deposit() public payable",
@@ -57,6 +59,7 @@ function App() {
     
     try {
       let tx;
+      // Note: Amounts are set to 0.01 ETH for demonstration
       if (type === 'deposit') {
         tx = await contract.deposit({ value: ethers.parseEther("0.01") });
       } else if (type === 'request') {
@@ -86,7 +89,6 @@ function App() {
 
   return (
     <div className="main-wrapper">
-      {/* Navbar section mimicking professional charity sites */}
       <nav className="navbar">
         <div className="logo"><h2>GRANT FOUNDATION</h2></div>
         <div className="nav-links">
@@ -97,10 +99,9 @@ function App() {
         </div>
       </nav>
 
-      {/* Hero section for professional look */}
       <header className="hero">
         <h1>WE CAN HELP SOMEONE</h1>
-        <p style={{maxWidth: '600px'}}>Empowering communities through blockchain transparency.</p>
+        <p style={{maxWidth: '600px', margin: '0 auto'}}>Empowering communities through blockchain transparency.</p>
         <div style={{marginTop: '30px'}}>
           <button onClick={() => handleAction('deposit')} className="main-donate-btn">
             DONATE NOW
@@ -108,7 +109,6 @@ function App() {
         </div>
       </header>
 
-      {/* TrustChain Dashboard */}
       <section className="stats-section">
         <div className="action-card">
           <h2 style={{color: '#333'}}>TrustChain Dashboard</h2>
