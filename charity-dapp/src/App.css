@@ -1,86 +1,102 @@
-/* Reset default margins */
-body, html, #root {
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+body {
   margin: 0;
-  padding: 0;
-  width: 100%;
   font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
 }
 
-.main-wrapper {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Navbar Style */
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 50px;
-  background: white;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.nav-links span {
-  margin: 0 15px;
-  font-weight: 600;
-  color: #333;
-}
-
-/* Hero Section Style */
-.hero {
+.hero-section {
   height: 80vh;
-  background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+  /* Using a public URL so you don't need a local file */
+  background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), 
               url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=2070');
   background-size: cover;
   background-position: center;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 2rem 4rem;
+  align-items: center;
+}
+
+.logo { font-weight: 900; letter-spacing: -1px; margin: 0; }
+.role-pill { background: #10b981; padding: 6px 16px; border-radius: 50px; font-size: 0.8rem; font-weight: bold; }
+
+.hero-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  color: white;
   text-align: center;
 }
 
-.hero h1 {
-  font-size: 4rem;
-  margin-bottom: 10px;
-}
+.main-title { font-size: 4.5rem; font-weight: 900; margin: 0; line-height: 1; }
+.accent { color: #10b981; }
+.sub-title { font-size: 1.25rem; opacity: 0.8; margin: 1rem 0 3rem; }
 
-/* Dashboard Section */
-.stats-section {
-  padding: 50px;
-  background: #f9f9f9;
+.donation-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 1.5rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
-  justify-content: center;
+  gap: 1rem;
+  align-items: center;
 }
 
-.action-card {
-  background: white;
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-  width: 100%;
-  max-width: 800px;
-}
-
-.role-badge {
-  background: #00a896;
+.amount-input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #10b981;
   color: white;
-  padding: 5px 15px;
-  border-radius: 20px;
+  font-size: 2rem;
+  font-weight: bold;
+  width: 100px;
+  text-align: center;
+  outline: none;
 }
-.navbar { display: flex; justify-content: space-between; padding: 1rem 5%; background: white; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-.role-badge { background: #00a896; color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; }
-.hero { background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c'); height: 60vh; background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
-.main-donate-btn { background-color: #00a896; color: white; padding: 15px 40px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-.stats-section { padding: 4rem 5%; background: #f4f7f6; display: flex; justify-content: center; }
-.action-card { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 800px; }
-.dashboard-grid { display: flex; justify-content: space-between; margin: 2rem 0; }
-.label { color: #888; font-size: 0.8rem; margin-bottom: 5px; }
-.address-text { font-size: 0.7rem; color: #555; }
-.admin-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-.admin-btn { padding: 10px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 5px; }
+
+.unit { font-weight: bold; color: #10b981; }
+
+.donate-btn {
+  background: #10b981;
+  color: white;
+  padding: 1rem 2.5rem;
+  border-radius: 12px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.donate-btn:hover { transform: scale(1.05); }
+
+.dashboard-section {
+  max-width: 900px;
+  margin: -60px auto 100px;
+  position: relative;
+  z-index: 10;
+}
+
+.audit-card {
+  background: white;
+  padding: 3rem;
+  border-radius: 30px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+}
+
+.audit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 2rem 0; }
+.audit-value { font-size: 2.5rem; font-weight: 900; color: #10b981; margin: 0; }
+.audit-address { font-size: 0.8rem; color: #64748b; word-break: break-all; }
+.button-group { display: flex; gap: 1rem; border-top: 1px solid #f1f5f9; paddingTop: 2rem; }
+
+.sec-btn { flex: 1; padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0; font-weight: bold; cursor: pointer; }
+.danger-btn { flex: 1; padding: 1rem; border-radius: 12px; background: #fee2e2; color: #ef4444; border: none; font-weight: bold; cursor: pointer; }
