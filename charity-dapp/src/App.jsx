@@ -8,100 +8,87 @@ const CONTRACT_ABI = [
   "function requestFunds(uint256 _amount) public",
   "function approveAmount(uint256 _amount) public",
   "function withdraw() public",
-  "function getContractBalance() public view returns (uint256)",
-  "function charity() public view returns (address)",
-  "function verifier() public view returns (address)"
+  "function getContractBalance() public view returns (uint256)"
 ];
 
 function App() {
-  const [balance, setBalance] = useState("0.012"); // Initializing with your current balance
+  const [balance, setBalance] = useState("0");
   const [account, setAccount] = useState("");
-  const [userRole, setUserRole] = useState("Donor");
   const [donationAmount, setDonationAmount] = useState("0.01");
 
   async function updateUI() {
-    if (window.ethereum) {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-      try {
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        setAccount(accounts[0]);
-        const bal = await contract.getContractBalance();
-        setBalance(ethers.formatEther(bal));
-
-        const charityAddr = await contract.charity();
-        const verifierAddr = await contract.verifier();
-        if (accounts[0].toLowerCase() === charityAddr.toLowerCase()) setUserRole("Charity");
-        else if (accounts[0].toLowerCase() === verifierAddr.toLowerCase()) setUserRole("Verifier");
-      } catch (err) { console.error(err); }
-    }
+    if (!window.ethereum) return;
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      if (accounts.length > 0) setAccount(accounts[0]);
+      const bal = await contract.getContractBalance();
+      setBalance(ethers.formatEther(bal));
+    } catch (err) { console.error("Balance Check Error:", err); }
   }
 
   useEffect(() => {
     updateUI();
-    if (window.ethereum) window.ethereum.on('accountsChanged', updateUI);
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', () => window.location.reload());
+    }
   }, []);
 
   async function handleAction(type) {
-    if (!window.ethereum) return alert("Install MetaMask!");
+    if (!window.ethereum) return alert("Please Install MetaMask!");
+    
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+    
     try {
+      // Use the amount currently in the input box
+      const val = ethers.parseEther(donationAmount);
       let tx;
-      if (type === 'deposit') tx = await contract.deposit({ value: ethers.parseEther(donationAmount) });
-      else if (type === 'request') tx = await contract.requestFunds(ethers.parseEther("0.01"));
-      else if (type === 'approve') tx = await contract.approveAmount(ethers.parseEther("0.01"));
-      else if (type === 'withdraw') tx = await contract.withdraw();
+
+      if (type === 'deposit') {
+        tx = await contract.deposit({ value: val });
+      } else if (type === 'request') {
+        tx = await contract.requestFunds(val);
+      } else if (type === 'approve') {
+        tx = await contract.approveAmount(val);
+      } else if (type === 'withdraw') {
+        tx = await contract.withdraw();
+      }
       
+      alert("Opening MetaMask for: " + type);
       await tx.wait();
       alert("Success!");
       updateUI();
-    } catch (err) { alert("Action Failed!"); }
+    } catch (err) {
+      console.error(err);
+      // This will show the actual blockchain error (like 'Execution Reverted')
+      alert("Transaction Failed! Check MetaMask to see if you are using the correct account.");
+    }
   }
 
   return (
     <div className="main-wrapper">
       <div className="hero-section">
-        <nav className="nav-container">
-          <h2 className="logo">GRANT FOUNDATION</h2>
-          <div className="role-pill">Role: {userRole}</div>
-        </nav>
-
+        <nav className="nav-container"><h2 className="logo">GRANT FOUNDATION</h2></nav>
         <div className="hero-content">
-          <h1 className="main-title">WE CAN HELP <span className="accent">SOMEONE</span></h1>
-          <p className="sub-title">Transparency in every drop of kindness.</p>
-
+          <h1 className="main-title">VAULT DASHBOARD</h1>
           <div className="donation-card">
-            <div className="input-box">
-              <input 
-                type="number" 
-                value={donationAmount} 
-                onChange={(e) => setDonationAmount(e.target.value)}
-                className="amount-input"
-              />
-              <span className="unit">ETH</span>
-            </div>
-            <button onClick={() => handleAction('deposit')} className="donate-btn">
-              Donate Now
-            </button>
+            <input 
+              type="number" 
+              value={donationAmount} 
+              onChange={(e) => setDonationAmount(e.target.value)}
+              className="amount-input"
+            />
+            <button onClick={() => handleAction('deposit')} className="donate-btn">Donate Now</button>
           </div>
         </div>
       </div>
-
       <div className="dashboard-section">
         <div className="audit-card">
-          <h3 className="card-title">TrustChain Audit</h3>
-          <div className="audit-grid">
-            <div className="audit-item">
-              <label>VAULT BALANCE</label>
-              <p className="audit-value">{balance} ETH</p>
-            </div>
-            <div className="audit-item">
-              <label>CONNECTED WALLET</label>
-              <p className="audit-address">{account}</p>
-            </div>
-          </div>
+          <p className="audit-value">Balance: {balance} ETH</p>
+          <p className="audit-address">Wallet: {account}</p>
           <div className="button-group">
             <button onClick={() => handleAction('request')} className="sec-btn">Request</button>
             <button onClick={() => handleAction('approve')} className="sec-btn">Approve</button>
@@ -112,5 +99,4 @@ function App() {
     </div>
   );
 }
-
 export default App;
